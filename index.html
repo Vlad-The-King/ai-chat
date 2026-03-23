@@ -6,99 +6,145 @@
 <title>VladGPT</title>
 
 <style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
+
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
   background: #eaffea;
+  overflow:hidden;
 }
 
-/* LOADING SCREEN */
+/* LOADING */
 #loading {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background: #bff5bf;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
+  position:fixed;
+  inset:0;
+  background:#bff5bf;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
 }
 
 .spinner {
-  width: 60px;
-  height: 60px;
-  border: 6px solid white;
-  border-top: 6px solid green;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+  width:55px;
+  height:55px;
+  border:5px solid white;
+  border-top:5px solid #1a7f1a;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
 }
 
-@keyframes spin {
-  100% { transform: rotate(360deg); }
+@keyframes spin { 100% { transform:rotate(360deg); } }
+
+.dots {
+  margin-top:10px;
+  font-size:30px;
+  letter-spacing:3px;
+  animation:dots 1.2s infinite;
+}
+
+@keyframes dots {
+  0% { opacity:0.2; }
+  50% { opacity:1; }
+  100% { opacity:0.2; }
 }
 
 /* HEADER */
 header {
-  height: 50px;
-  background: #c8f7c8;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  font-weight: bold;
+  height:55px;
+  background:#c9f7c9;
+  display:flex;
+  align-items:center;
+  padding:0 15px;
+  font-weight:bold;
+  font-size:18px;
 }
 
 #menuBtn {
-  font-size: 26px;
-  cursor: pointer;
-  margin-right: 10px;
+  font-size:28px;
+  cursor:pointer;
+  margin-right:15px;
+  transition:0.3s;
+}
+
+#menuBtn:hover {
+  transform:scale(1.1);
 }
 
 /* SIDEBAR */
 #sidebar {
-  position: fixed;
-  left: -250px;
-  top: 0;
-  width: 250px;
-  height: 100%;
-  background: #d9ffd9;
-  padding: 10px;
-  transition: 0.3s;
+  position:fixed;
+  top:0;
+  left:-280px;
+  width:280px;
+  height:100%;
+  background:#d9ffd9;
+  padding:15px;
+  transition:0.35s cubic-bezier(.77,0,.18,1);
+  box-shadow:2px 0 20px rgba(0,0,0,0.1);
+  backdrop-filter: blur(10px);
 }
 
 #sidebar.open {
-  left: 0;
+  left:0;
 }
 
 /* CHAT */
 #chat {
-  padding: 10px;
-  height: calc(100vh - 120px);
-  overflow-y: auto;
+  height:calc(100vh - 120px);
+  padding:15px;
+  overflow-y:auto;
 }
 
-.message {
-  padding: 8px;
-  margin: 5px 0;
-  border-radius: 10px;
+.msg {
+  max-width:70%;
+  padding:10px 12px;
+  margin:8px 0;
+  border-radius:14px;
+  animation:fade 0.2s ease;
 }
 
-.user { background: #aaffaa; }
-.ai { background: #ffffff; }
+@keyframes fade {
+  from { opacity:0; transform:translateY(5px); }
+  to { opacity:1; transform:translateY(0); }
+}
 
+.user {
+  background:#9dff9d;
+  margin-left:auto;
+}
+
+.ai {
+  background:white;
+}
+
+/* INPUT */
 #inputBox {
-  display: flex;
-  padding: 10px;
+  display:flex;
+  padding:10px;
+  gap:8px;
 }
 
 input {
-  flex: 1;
-  padding: 10px;
+  flex:1;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #aaa;
+  outline:none;
 }
 
 button {
-  padding: 10px;
-  margin-left: 5px;
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
+  background:#2ecc71;
+  color:white;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover {
+  transform:scale(1.05);
 }
 </style>
 </head>
@@ -108,75 +154,81 @@ button {
 <!-- LOADING -->
 <div id="loading">
   <div class="spinner"></div>
-  <h2>VladGPT</h2>
+  <div class="dots">...</div>
 </div>
 
 <!-- SIDEBAR -->
 <div id="sidebar">
   <h3>Conversații</h3>
-  <div id="conversations"></div>
 </div>
 
 <!-- HEADER -->
 <header>
   <div id="menuBtn">☰</div>
-  <div>VladGPT</div>
+  VladGPT
 </header>
 
 <!-- CHAT -->
 <div id="chat"></div>
 
+<!-- INPUT -->
 <div id="inputBox">
   <input id="text" placeholder="Scrie mesaj..." />
   <button onclick="send()">→</button>
 </div>
 
 <script>
-let sidebar = document.getElementById("sidebar");
-let chat = document.getElementById("chat");
+const sidebar = document.getElementById("sidebar");
+const chat = document.getElementById("chat");
 
 document.getElementById("menuBtn").onclick = () => {
   sidebar.classList.toggle("open");
 };
 
-/* LOADING 4 sec */
+/* LOADING 3 sec */
 setTimeout(() => {
-  document.getElementById("loading").style.display = "none";
-}, 4000);
+  document.getElementById("loading").style.opacity = "0";
+  setTimeout(() => {
+    document.getElementById("loading").style.display = "none";
+  }, 300);
+}, 3000);
 
-/* LOAD CHAT */
+/* CHAT MEMORY */
 let messages = JSON.parse(localStorage.getItem("chat") || "[]");
-render();
 
 function render(){
   chat.innerHTML = "";
   messages.forEach(m => {
-    let div = document.createElement("div");
-    div.className = "message " + m.role;
-    div.innerText = m.text;
+    const div = document.createElement("div");
+    div.className = "msg " + m.role;
+    div.textContent = m.text;
     chat.appendChild(div);
   });
+  chat.scrollTop = chat.scrollHeight;
 }
+render();
 
+/* SEND */
 async function send(){
-  let input = document.getElementById("text");
-  let text = input.value;
+  const input = document.getElementById("text");
+  const text = input.value;
   if(!text) return;
 
   messages.push({role:"user", text});
   render();
   input.value = "";
 
-  let res = await fetch("/api/chat", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
+  const res = await fetch("/api/chat", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
     body: JSON.stringify({message:text})
   });
 
-  let data = await res.json();
+  const data = await res.json();
 
-  messages.push({role:"ai", text: data.reply});
+  messages.push({role:"ai", text:data.reply});
   localStorage.setItem("chat", JSON.stringify(messages));
+
   render();
 }
 </script>
