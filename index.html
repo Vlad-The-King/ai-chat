@@ -8,67 +8,38 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Arial,sans-serif;}
 
-/* LOADING */
+/* ================= LOADING ================= */
 #loadingScreen{
 position:fixed;
 inset:0;
-background:radial-gradient(circle,#061f17,#000);
+background:radial-gradient(circle,#06281d,#000);
 display:flex;
 align-items:center;
 justify-content:center;
-flex-direction:column;
 z-index:9999;
-animation:fadeOut 1s ease forwards;
-animation-delay:7s;
+animation:fadeOut .8s ease forwards;
+animation-delay:4.5s;
 }
 
-.ring{
-width:120px;
-height:120px;
-border-radius:50%;
-border:3px solid rgba(34,197,94,0.2);
-border-top:3px solid #22c55e;
-animation:spin 1s linear infinite;
-position:relative;
-}
-
-.ring::after{
-content:"";
-position:absolute;
-inset:20px;
-border-radius:50%;
-border:2px dashed rgba(34,197,94,0.5);
-animation:spinReverse 2s linear infinite;
-}
-
-.orb{
-width:18px;
-height:18px;
-background:#22c55e;
-border-radius:50%;
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-box-shadow:0 0 30px #22c55e;
-animation:pulse 1.2s infinite;
-}
-
-.loaderText{
-margin-top:25px;
-color:#22c55e;
-font-size:30px;
+.loadingText{
+font-size:32px;
 font-weight:800;
-animation:glow 1.5s infinite;
+color:#22c55e;
+animation:moveText 1.2s ease-in-out infinite;
+letter-spacing:2px;
 }
 
-@keyframes spin{to{transform:rotate(360deg);}}
-@keyframes spinReverse{to{transform:rotate(-360deg);}}
-@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.5);}}
-@keyframes glow{0%,100%{text-shadow:0 0 10px #22c55e;}50%{text-shadow:0 0 30px #22c55e;}}
-@keyframes fadeOut{to{opacity:0;visibility:hidden;}}
+@keyframes moveText{
+0%{transform:translateY(0);opacity:.6;}
+50%{transform:translateY(-10px);opacity:1;}
+100%{transform:translateY(0);opacity:.6;}
+}
 
-/* APP */
+@keyframes fadeOut{
+to{opacity:0;visibility:hidden;}
+}
+
+/* ================= APP ================= */
 body{
 height:100vh;
 display:flex;
@@ -83,36 +54,25 @@ width:280px;
 background:rgba(0,0,0,0.35);
 backdrop-filter:blur(14px);
 padding:12px;
-display:none;
+position:fixed;
+left:-300px;
+top:0;
+bottom:0;
+transition:0.35s ease;
+display:flex;
 flex-direction:column;
-position:relative;
 }
 
+#sidebar.open{
+left:0;
+}
+
+/* chat list */
 .chatItem{
 padding:10px;
 background:rgba(255,255,255,0.08);
 margin-bottom:8px;
 border-radius:10px;
-cursor:pointer;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-.chatDots{
-letter-spacing:3px;
-font-weight:800;
-}
-
-.closeChat{
-position:absolute;
-top:10px;
-right:10px;
-background:red;
-border:none;
-color:white;
-padding:5px 8px;
-border-radius:6px;
 cursor:pointer;
 }
 
@@ -121,6 +81,7 @@ cursor:pointer;
 flex:1;
 display:flex;
 flex-direction:column;
+width:100%;
 }
 
 .topBar{
@@ -135,10 +96,16 @@ background:rgba(0,0,0,0.25);
 background:none;
 border:none;
 color:white;
-font-size:22px;
+font-size:26px;
 cursor:pointer;
+transition:.2s;
 }
 
+.menuBtn:hover{
+transform:scale(1.1);
+}
+
+/* CHAT */
 #chat{
 flex:1;
 overflow-y:auto;
@@ -157,6 +124,7 @@ border-radius:14px;
 .user{align-self:flex-end;background:#22c55e;color:black;}
 .ai{align-self:flex-start;background:rgba(255,255,255,0.12);}
 
+/* INPUT */
 #inputArea{
 display:flex;
 padding:12px;
@@ -169,6 +137,7 @@ flex:1;
 padding:12px;
 border:none;
 border-radius:10px;
+outline:none;
 }
 
 button.send{
@@ -179,6 +148,22 @@ background:#22c55e;
 font-weight:800;
 cursor:pointer;
 }
+
+/* SIDEBAR ANIMATION OVERLAY EFFECT */
+#overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.25);
+backdrop-filter:blur(2px);
+opacity:0;
+pointer-events:none;
+transition:.35s ease;
+}
+
+#overlay.show{
+opacity:1;
+pointer-events:auto;
+}
 </style>
 </head>
 
@@ -186,11 +171,11 @@ cursor:pointer;
 
 <!-- LOADING -->
 <div id="loadingScreen">
-  <div class="ring">
-    <div class="orb"></div>
-  </div>
-  <div class="loaderText">VladGPT</div>
+  <div class="loadingText">VladGPT</div>
 </div>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="toggleSidebar()"></div>
 
 <!-- SIDEBAR -->
 <div id="sidebar">
@@ -201,8 +186,7 @@ cursor:pointer;
 <div id="main">
 
 <div class="topBar">
-<button class="menuBtn" onclick="toggleSidebar()">☰</button>
-<button class="menuBtn" onclick="closeChat()">✕</button>
+<button class="menuBtn" onclick="toggleSidebar()">•••</button>
 </div>
 
 <div id="chat"></div>
@@ -215,24 +199,24 @@ cursor:pointer;
 </div>
 
 <script>
+
 let conversations = JSON.parse(localStorage.getItem('vladgpt')||'[]');
 let active=null;
+let sidebarOpen=false;
 
 function save(){
 localStorage.setItem('vladgpt',JSON.stringify(conversations));
 }
 
+/* ================= SIDEBAR ================= */
 function toggleSidebar(){
-document.getElementById('sidebar').style.display=
-document.getElementById('sidebar').style.display==='flex'?'none':'flex';
+sidebarOpen=!sidebarOpen;
+document.getElementById('sidebar').classList.toggle('open');
+document.getElementById('overlay').classList.toggle('show');
 render();
 }
 
-function closeChat(){
-active=null;
-document.getElementById('chat').innerHTML='';
-}
-
+/* ================= CHAT ================= */
 function newChat(){
 const c={id:Date.now(),messages:[]};
 conversations.push(c);
@@ -244,6 +228,7 @@ render();
 function openChat(id){
 active=id;
 render();
+toggleSidebar();
 }
 
 function render(){
@@ -253,7 +238,7 @@ list.innerHTML='';
 conversations.forEach(c=>{
 const div=document.createElement('div');
 div.className='chatItem';
-div.innerHTML=`<div class="chatDots">•••</div>`;
+div.innerText='•••';
 div.onclick=()=>openChat(c.id);
 list.appendChild(div);
 });
@@ -272,6 +257,7 @@ box.appendChild(d);
 });
 }
 
+/* ================= SEND ================= */
 async function sendMessage(){
 const text=input.value.trim();
 if(!text||!active) return;
@@ -289,16 +275,24 @@ body:JSON.stringify({message:text})
 
 const data=await res.json();
 chat.messages.push({role:'ai',text:data.reply});
+
 save();
 render();
 }
 
+/* ENTER */
+input.addEventListener('keypress',e=>{
+if(e.key==='Enter') sendMessage();
+});
+
+/* INIT */
 newChat();
 
-/* LOADING 7 sec */
+/* LOADING REMOVE */
 setTimeout(()=>{
 document.getElementById('loadingScreen').remove();
-},7000);
+},4500);
+
 </script>
 
 </body>
