@@ -1,37 +1,23 @@
-export default async function handler(req, res) {
-  try {
-    const { message } = req.body;
+const data = await response.json();
 
-    const response = await fetch(
-      "https://router.huggingface.co/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.HF_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "mistralai/Mistral-7B-Instruct-v0.2",
-          messages: [
-            { role: "user", content: message }
-          ],
-          max_tokens: 200
-        })
-      }
-    );
+console.log("HF RAW:", data);
 
-    const data = await response.json();
+let reply = "";
 
-    const reply =
-      data?.choices?.[0]?.message?.content ||
-      data?.error ||
-      "No response";
-
-    return res.status(200).json({ reply });
-
-  } catch (err) {
-    return res.status(500).json({
-      reply: err.message || "Server error"
-    });
-  }
+if (data?.choices?.[0]?.message?.content) {
+  reply = data.choices[0].message.content;
+} 
+else if (typeof data === "string") {
+  reply = data;
+} 
+else if (data?.generated_text) {
+  reply = data.generated_text;
+} 
+else if (Array.isArray(data) && data[0]?.generated_text) {
+  reply = data[0].generated_text;
+} 
+else {
+  reply = JSON.stringify(data); // fallback safe
 }
+
+return res.status(200).json({ reply });
