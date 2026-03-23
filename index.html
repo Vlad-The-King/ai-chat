@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>VladGPT Pro</title>
+<title>VladGPT</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Arial,sans-serif;}
@@ -12,37 +12,58 @@
 #loadingScreen{
 position:fixed;
 inset:0;
-background:linear-gradient(135deg,#06281d,#0b3d2e,#0f5a3c);
+background:radial-gradient(circle at center,#0b3d2e,#06281d,#000);
 display:flex;
 align-items:center;
 justify-content:center;
+flex-direction:column;
 z-index:9999;
-animation:fadeOut 0.5s ease forwards;
-animation-delay:3s;
+animation:fadeOut 0.8s ease forwards;
+animation-delay:4.5s;
+}
+
+.orb{
+width:90px;
+height:90px;
+border-radius:50%;
+background:radial-gradient(circle,#22c55e,#0b3d2e);
+box-shadow:0 0 40px #22c55e;
+animation:spin 1.2s linear infinite, pulse 1.5s ease-in-out infinite;
+margin-bottom:20px;
 }
 
 .loaderText{
-font-size:42px;
+font-size:34px;
 font-weight:800;
 color:#22c55e;
 letter-spacing:2px;
-animation:pulse 1s infinite;
+animation:textGlow 1.2s infinite;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
 }
 
 @keyframes pulse{
-0%{transform:scale(1);opacity:0.7;}
-50%{transform:scale(1.1);opacity:1;}
-100%{transform:scale(1);opacity:0.7;}
+0%,100%{transform:scale(1);opacity:0.7;}
+50%{transform:scale(1.25);opacity:1;}
+}
+
+@keyframes textGlow{
+0%,100%{text-shadow:0 0 10px #22c55e;}
+50%{text-shadow:0 0 25px #22c55e;}
 }
 
 @keyframes fadeOut{
 to{
 opacity:0;
+transform:scale(1.1);
 visibility:hidden;
 }
 }
 
-/* ORIGINAL UI */
+/* MAIN UI */
 body{
 height:100vh;
 display:flex;
@@ -84,7 +105,6 @@ cursor:pointer;
 display:flex;
 justify-content:space-between;
 align-items:center;
-animation:fadeIn .2s ease;
 }
 
 .chatItem.active{
@@ -114,14 +134,7 @@ display:flex;
 flex-direction:column;
 }
 
-header{
-padding:16px;
-text-align:center;
-font-size:24px;
-font-weight:800;
-background:rgba(0,0,0,0.25);
-backdrop-filter:blur(10px);
-}
+/* removed header text as requested */
 
 #chat{
 flex:1;
@@ -130,7 +143,6 @@ padding:20px;
 display:flex;
 flex-direction:column;
 gap:10px;
-scroll-behavior:smooth;
 }
 
 .msg{
@@ -139,7 +151,6 @@ padding:10px 14px;
 border-radius:14px;
 word-wrap:break-word;
 animation:pop .15s ease;
-line-height:1.4;
 }
 
 @keyframes pop{
@@ -147,22 +158,8 @@ from{transform:scale(.95);opacity:0;}
 to{transform:scale(1);opacity:1;}
 }
 
-.user{
-align-self:flex-end;
-background:#22c55e;
-color:black;
-}
-
-.ai{
-align-self:flex-start;
-background:rgba(255,255,255,0.12);
-border:1px solid rgba(255,255,255,0.15);
-}
-
-.typing{
-opacity:.7;
-font-style:italic;
-}
+.user{align-self:flex-end;background:#22c55e;color:black;}
+.ai{align-self:flex-start;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);}
 
 #inputArea{
 display:flex;
@@ -177,7 +174,6 @@ padding:12px;
 border:none;
 border-radius:10px;
 outline:none;
-font-size:15px;
 }
 
 button.send{
@@ -188,22 +184,15 @@ background:#22c55e;
 color:black;
 font-weight:800;
 cursor:pointer;
-transition:.2s;
-}
-
-button.send:hover{transform:scale(1.05);}
-
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(5px);}
-to{opacity:1;transform:translateY(0);}
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOADING SCREEN -->
+<!-- LOADING -->
 <div id="loadingScreen">
+  <div class="orb"></div>
   <div class="loaderText">VladGPT</div>
 </div>
 
@@ -213,7 +202,6 @@ to{opacity:1;transform:translateY(0);}
 </div>
 
 <div id="main">
-<header>VladGPT Pro</header>
 <div id="chat"></div>
 
 <div id="inputArea">
@@ -235,29 +223,15 @@ localStorage.setItem('vladgpt_chats', JSON.stringify(conversations));
 }
 
 function newChat(){
-const chat = {id:Date.now(), title:"New chat", messages:[]};
+const chat={id:Date.now(),title:"New chat",messages:[]};
 conversations.unshift(chat);
-activeChat = chat.id;
+activeChat=chat.id;
 save();render();
 }
 
 function selectChat(id){
-activeChat = id;
+activeChat=id;
 render();
-}
-
-function deleteChat(id,e){
-e.stopPropagation();
-conversations = conversations.filter(c=>c.id!==id);
-if(activeChat===id) activeChat = conversations[0]?.id || null;
-save();render();
-}
-
-function autoTitle(chat){
-if(chat.title !== "New chat") return;
-if(chat.messages.length>0){
-chat.title = chat.messages[0].text.slice(0,25);
-}
 }
 
 function render(){
@@ -268,11 +242,11 @@ conversations.forEach(c=>{
 const div=document.createElement('div');
 div.className='chatItem'+(c.id===activeChat?' active':'');
 div.onclick=()=>selectChat(c.id);
-div.innerHTML=`<div class='chatTitle'>${c.title}</div><button class='deleteBtn' onclick='deleteChat(${c.id},event)'>x</button>`;
+div.innerHTML=`<div class='chatTitle'>${c.title}</div>`;
 chatList.appendChild(div);
 });
 
-const current = conversations.find(c=>c.id===activeChat);
+const current=conversations.find(c=>c.id===activeChat);
 if(!current) return;
 
 current.messages.forEach(m=>{
@@ -281,22 +255,6 @@ d.className='msg '+m.role;
 d.innerText=m.text;
 chatBox.appendChild(d);
 });
-
-chatBox.scrollTop=chatBox.scrollHeight;
-}
-
-function addTyping(){
-const d=document.createElement('div');
-d.className='msg ai typing';
-d.innerText='AI is typing...';
-d.id='typing';
-chatBox.appendChild(d);
-chatBox.scrollTop=chatBox.scrollHeight;
-}
-
-function removeTyping(){
-const t=document.getElementById('typing');
-if(t) t.remove();
 }
 
 async function sendMessage(){
@@ -308,14 +266,14 @@ chat.messages.push({role:'user',text});
 input.value='';
 render();
 
-addTyping();
+const res=await fetch('/api/chat',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({message:text})
+});
 
-const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
 const data=await res.json();
-
-removeTyping();
 chat.messages.push({role:'ai',text:data.reply});
-autoTitle(chat);
 save();render();
 }
 
@@ -325,10 +283,13 @@ if(e.key==='Enter') sendMessage();
 
 newChat();
 
-/* REMOVE LOADING AFTER 3s */
+/* LOADING REMOVE */
 setTimeout(()=>{
-document.getElementById('loadingScreen').style.display='none';
-},3000);
+document.getElementById('loadingScreen').style.opacity='0';
+setTimeout(()=>{
+document.getElementById('loadingScreen').remove();
+},800);
+},4500);
 </script>
 
 </body>
