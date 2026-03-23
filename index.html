@@ -49,15 +49,42 @@ overflow:hidden;
 
 /* SIDEBAR */
 #sidebar{
+position:fixed;
+left:-300px;
+top:0;
+bottom:0;
 width:280px;
-background:rgba(0,0,0,0.4);
+background:rgba(0,0,0,0.45);
 backdrop-filter:blur(12px);
 padding:10px;
 display:flex;
 flex-direction:column;
 gap:8px;
+transition:.3s ease;
+z-index:20;
 }
 
+#sidebar.open{
+left:0;
+}
+
+/* OVERLAY */
+#overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.4);
+opacity:0;
+pointer-events:none;
+transition:.2s;
+z-index:10;
+}
+
+#overlay.show{
+opacity:1;
+pointer-events:auto;
+}
+
+/* CHAT ITEMS */
 .chatItem{
 display:flex;
 justify-content:space-between;
@@ -88,11 +115,19 @@ display:flex;
 flex-direction:column;
 }
 
-header{
-padding:12px;
-text-align:center;
-font-weight:800;
-background:rgba(0,0,0,0.3);
+/* TOP BAR (DOAR 3 PUNCTE) */
+.topBar{
+padding:10px;
+background:rgba(0,0,0,0.25);
+display:flex;
+}
+
+.menuBtn{
+background:none;
+border:none;
+color:white;
+font-size:28px;
+cursor:pointer;
 }
 
 /* CHAT */
@@ -139,51 +174,6 @@ border-radius:10px;
 cursor:pointer;
 }
 
-/* CONFIRM */
-#confirmBox{
-position:fixed;
-inset:0;
-display:flex;
-align-items:center;
-justify-content:center;
-background:rgba(0,0,0,0.6);
-opacity:0;
-pointer-events:none;
-transition:.2s;
-z-index:9999;
-}
-
-#confirmBox.show{
-opacity:1;
-pointer-events:auto;
-}
-
-.confirm{
-background:#111;
-padding:20px;
-border-radius:12px;
-width:260px;
-text-align:center;
-}
-
-.btns{
-display:flex;
-gap:10px;
-margin-top:15px;
-}
-
-.btns button{
-flex:1;
-padding:10px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-font-weight:700;
-}
-
-.yes{background:#22c55e;color:black;}
-.no{background:#444;color:white;}
-
 </style>
 </head>
 
@@ -194,23 +184,18 @@ font-weight:700;
   <div class="loadingText">VladGPT</div>
 </div>
 
-<!-- CONFIRM -->
-<div id="confirmBox">
-  <div class="confirm">
-    <p>Are you sure you want to delete?</p>
-    <div class="btns">
-      <button class="no" onclick="closeConfirm()">No</button>
-      <button class="yes" id="yesBtn">Yes</button>
-    </div>
-  </div>
-</div>
+<!-- OVERLAY -->
+<div id="overlay" onclick="closeSidebar()"></div>
 
 <!-- SIDEBAR -->
 <div id="sidebar"></div>
 
 <!-- MAIN -->
 <div id="main">
-<header>VladGPT</header>
+
+<div class="topBar">
+<button class="menuBtn" onclick="openSidebar()">•••</button>
+</div>
 
 <div id="chat"></div>
 
@@ -218,14 +203,26 @@ font-weight:700;
 <input id="input" placeholder="Ask..." />
 <button class="send" onclick="sendMessage()">Send</button>
 </div>
+
 </div>
 
 <script>
 
 let conversations = JSON.parse(localStorage.getItem('vlad')||'[]');
 let active=null;
-let deleteTarget=null;
 
+/* SIDEBAR */
+function openSidebar(){
+document.getElementById('sidebar').classList.add('open');
+document.getElementById('overlay').classList.add('show');
+}
+
+function closeSidebar(){
+document.getElementById('sidebar').classList.remove('open');
+document.getElementById('overlay').classList.remove('show');
+}
+
+/* SAVE */
 function save(){
 localStorage.setItem('vlad',JSON.stringify(conversations));
 }
@@ -251,22 +248,12 @@ function title(c){
 return c.messages.length?c.messages[0].text.slice(0,25):"New Chat";
 }
 
-/* DELETE FLOW */
+/* DELETE */
 function askDelete(id){
-deleteTarget=id;
-document.getElementById('confirmBox').classList.add('show');
-
-document.getElementById('yesBtn').onclick=()=>{
-conversations=conversations.filter(c=>c.id!==id);
+conversations = conversations.filter(c=>c.id!==id);
 if(active===id) active=conversations[0]?.id||null;
 save();
 render();
-closeConfirm();
-};
-}
-
-function closeConfirm(){
-document.getElementById('confirmBox').classList.remove('show');
 }
 
 /* RENDER */
@@ -283,7 +270,7 @@ div.innerHTML=`
 <button class="delBtn" onclick="event.stopPropagation();askDelete(${c.id})">x</button>
 `;
 
-div.onclick=()=>{active=c.id;render();};
+div.onclick=()=>{active=c.id;render();closeSidebar();};
 
 side.appendChild(div);
 });
