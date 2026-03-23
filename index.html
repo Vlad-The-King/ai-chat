@@ -8,7 +8,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Arial,sans-serif;}
 
-/* ================= LOADING ================= */
+/* LOADING */
 #loadingScreen{
 position:fixed;
 inset:0;
@@ -22,16 +22,17 @@ animation-delay:4.5s;
 }
 
 .loadingText{
-font-size:32px;
-font-weight:800;
+font-size:64px;
+font-weight:900;
 color:#22c55e;
-animation:moveText 1.2s ease-in-out infinite;
-letter-spacing:2px;
+letter-spacing:3px;
+animation:float 1.2s ease-in-out infinite;
+text-shadow:0 0 25px #22c55e;
 }
 
-@keyframes moveText{
+@keyframes float{
 0%{transform:translateY(0);opacity:.6;}
-50%{transform:translateY(-10px);opacity:1;}
+50%{transform:translateY(-12px);opacity:1;}
 100%{transform:translateY(0);opacity:.6;}
 }
 
@@ -39,7 +40,7 @@ letter-spacing:2px;
 to{opacity:0;visibility:hidden;}
 }
 
-/* ================= APP ================= */
+/* APP */
 body{
 height:100vh;
 display:flex;
@@ -58,22 +59,25 @@ position:fixed;
 left:-300px;
 top:0;
 bottom:0;
-transition:0.35s ease;
+transition:.35s ease;
 display:flex;
 flex-direction:column;
 }
 
-#sidebar.open{
-left:0;
-}
+#sidebar.open{left:0;}
 
-/* chat list */
 .chatItem{
 padding:10px;
 background:rgba(255,255,255,0.08);
 margin-bottom:8px;
 border-radius:10px;
 cursor:pointer;
+transition:.2s;
+}
+
+.chatItem:hover{
+transform:scale(1.02);
+background:rgba(34,197,94,0.25);
 }
 
 /* MAIN */
@@ -86,8 +90,6 @@ width:100%;
 
 .topBar{
 display:flex;
-align-items:center;
-justify-content:space-between;
 padding:10px;
 background:rgba(0,0,0,0.25);
 }
@@ -98,11 +100,6 @@ border:none;
 color:white;
 font-size:26px;
 cursor:pointer;
-transition:.2s;
-}
-
-.menuBtn:hover{
-transform:scale(1.1);
 }
 
 /* CHAT */
@@ -148,22 +145,6 @@ background:#22c55e;
 font-weight:800;
 cursor:pointer;
 }
-
-/* SIDEBAR ANIMATION OVERLAY EFFECT */
-#overlay{
-position:fixed;
-inset:0;
-background:rgba(0,0,0,0.25);
-backdrop-filter:blur(2px);
-opacity:0;
-pointer-events:none;
-transition:.35s ease;
-}
-
-#overlay.show{
-opacity:1;
-pointer-events:auto;
-}
 </style>
 </head>
 
@@ -174,13 +155,8 @@ pointer-events:auto;
   <div class="loadingText">VladGPT</div>
 </div>
 
-<!-- OVERLAY -->
-<div id="overlay" onclick="toggleSidebar()"></div>
-
 <!-- SIDEBAR -->
-<div id="sidebar">
-<div id="chatList"></div>
-</div>
+<div id="sidebar"></div>
 
 <!-- MAIN -->
 <div id="main">
@@ -202,45 +178,46 @@ pointer-events:auto;
 
 let conversations = JSON.parse(localStorage.getItem('vladgpt')||'[]');
 let active=null;
-let sidebarOpen=false;
 
-function save(){
-localStorage.setItem('vladgpt',JSON.stringify(conversations));
-}
-
-/* ================= SIDEBAR ================= */
-function toggleSidebar(){
-sidebarOpen=!sidebarOpen;
-document.getElementById('sidebar').classList.toggle('open');
-document.getElementById('overlay').classList.toggle('show');
-render();
-}
-
-/* ================= CHAT ================= */
+/* INIT NEW CHAT */
 function newChat(){
-const c={id:Date.now(),messages:[]};
+const c={
+id:Date.now(),
+title:"New Chat",
+messages:[]
+};
 conversations.push(c);
 active=c.id;
 save();
 render();
 }
 
-function openChat(id){
-active=id;
-render();
-toggleSidebar();
+function save(){
+localStorage.setItem('vladgpt',JSON.stringify(conversations));
 }
 
+/* SIDEBAR */
+function toggleSidebar(){
+document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* GET TITLE */
+function getTitle(chat){
+if(!chat.messages.length) return "New Chat";
+return chat.messages[0].text.slice(0,28);
+}
+
+/* RENDER */
 function render(){
-const list=document.getElementById('chatList');
-list.innerHTML='';
+const sidebar=document.getElementById('sidebar');
+sidebar.innerHTML='';
 
 conversations.forEach(c=>{
 const div=document.createElement('div');
 div.className='chatItem';
-div.innerText='•••';
+div.innerText=getTitle(c);
 div.onclick=()=>openChat(c.id);
-list.appendChild(div);
+sidebar.appendChild(div);
 });
 
 const chat=conversations.find(c=>c.id===active);
@@ -257,12 +234,20 @@ box.appendChild(d);
 });
 }
 
-/* ================= SEND ================= */
+/* OPEN CHAT */
+function openChat(id){
+active=id;
+render();
+toggleSidebar();
+}
+
+/* SEND */
 async function sendMessage(){
 const text=input.value.trim();
 if(!text||!active) return;
 
 const chat=conversations.find(c=>c.id===active);
+
 chat.messages.push({role:'user',text});
 input.value='';
 render();
@@ -274,8 +259,8 @@ body:JSON.stringify({message:text})
 });
 
 const data=await res.json();
-chat.messages.push({role:'ai',text:data.reply});
 
+chat.messages.push({role:'ai',text:data.reply});
 save();
 render();
 }
@@ -285,7 +270,7 @@ input.addEventListener('keypress',e=>{
 if(e.key==='Enter') sendMessage();
 });
 
-/* INIT */
+/* START */
 newChat();
 
 /* LOADING REMOVE */
