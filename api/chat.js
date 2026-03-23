@@ -11,23 +11,27 @@ export default async function handler(req, res) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "mistralai/Mistral-7B-Instruct-v0.2",
-          messages: [{ role: "user", content: message }]
+          model: "HuggingFaceH4/zephyr-7b-beta",
+          messages: [
+            { role: "user", content: message }
+          ],
+          max_tokens: 200
         })
       }
     );
 
-    const text = await response.text(); // IMPORTANT
+    const data = await response.json();
 
-    console.log("HF RAW RESPONSE:", text);
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      data?.error?.message ||
+      JSON.stringify(data);
 
-    return res.status(200).json({
-      reply: text
-    });
+    return res.status(200).json({ reply });
 
   } catch (err) {
     return res.status(500).json({
-      reply: "ERROR: " + err.message
+      reply: err.message
     });
   }
 }
