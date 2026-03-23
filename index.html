@@ -3,11 +3,42 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>VladGPT Pro</title>
+<title>VladGPT</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Arial,sans-serif;}
 
+/* LOADING */
+#loadingScreen{
+position:fixed;
+inset:0;
+background:radial-gradient(circle,#06281d,#000);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:9999;
+animation:fadeOut .8s ease forwards;
+animation-delay:4.5s;
+}
+
+.loadingText{
+font-size:64px;
+font-weight:900;
+color:#22c55e;
+animation:float 1.2s infinite ease-in-out;
+text-shadow:0 0 20px #22c55e;
+}
+
+@keyframes float{
+0%,100%{transform:translateY(0);}
+50%{transform:translateY(-12px);}
+}
+
+@keyframes fadeOut{
+to{opacity:0;visibility:hidden;}
+}
+
+/* LAYOUT */
 body{
 height:100vh;
 display:flex;
@@ -28,18 +59,26 @@ gap:8px;
 }
 
 .chatItem{
+display:flex;
+justify-content:space-between;
+align-items:center;
 padding:10px;
 background:rgba(255,255,255,0.08);
 border-radius:10px;
 cursor:pointer;
-display:flex;
-justify-content:space-between;
-align-items:center;
-transition:.2s;
 }
 
 .chatItem:hover{
 background:rgba(34,197,94,0.25);
+}
+
+.delBtn{
+background:red;
+border:none;
+color:white;
+padding:3px 7px;
+border-radius:6px;
+cursor:pointer;
 }
 
 /* MAIN */
@@ -91,20 +130,17 @@ border-radius:10px;
 outline:none;
 }
 
-button{
-border:none;
-border-radius:10px;
-cursor:pointer;
-font-weight:700;
-}
-
 .send{
 background:#22c55e;
+border:none;
 padding:12px 16px;
+font-weight:700;
+border-radius:10px;
+cursor:pointer;
 }
 
-/* DELETE ANIMATION */
-#deleteOverlay{
+/* CONFIRM */
+#confirmBox{
 position:fixed;
 inset:0;
 display:flex;
@@ -117,76 +153,56 @@ transition:.2s;
 z-index:9999;
 }
 
-#deleteOverlay.show{
+#confirmBox.show{
 opacity:1;
 pointer-events:auto;
 }
 
-.trash{
-font-size:90px;
-animation:trash 1.2s ease forwards;
-}
-
-@keyframes trash{
-0%{transform:scale(.3) rotate(-20deg);opacity:0;}
-40%{transform:scale(1.3) rotate(10deg);opacity:1;}
-100%{transform:scale(.6);opacity:0;}
-}
-
-/* BIN BUTTON */
-#binBtn{
-position:fixed;
-bottom:15px;
-left:15px;
+.confirm{
 background:#111;
-padding:10px;
-border-radius:10px;
-cursor:pointer;
-z-index:1000;
-}
-
-/* BIN PANEL */
-#binPanel{
-position:fixed;
-left:0;
-top:0;
-bottom:0;
+padding:20px;
+border-radius:12px;
 width:260px;
-background:rgba(0,0,0,0.9);
-transform:translateX(-100%);
-transition:.3s;
-z-index:999;
-padding:10px;
+text-align:center;
 }
 
-#binPanel.open{
-transform:translateX(0);
-}
-
-.binItem{
-padding:8px;
-background:rgba(255,255,255,0.08);
-margin-bottom:6px;
-border-radius:8px;
+.btns{
 display:flex;
-justify-content:space-between;
+gap:10px;
+margin-top:15px;
 }
+
+.btns button{
+flex:1;
+padding:10px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:700;
+}
+
+.yes{background:#22c55e;color:black;}
+.no{background:#444;color:white;}
+
 </style>
 </head>
 
 <body>
 
-<!-- DELETE -->
-<div id="deleteOverlay">
-<div class="trash">🗑️</div>
+<!-- LOADING -->
+<div id="loadingScreen">
+  <div class="loadingText">VladGPT</div>
 </div>
 
-<!-- BIN -->
-<div id="binBtn" onclick="toggleBin()">🗂</div>
-
-<div id="binPanel">
-<h3>Recycle Bin</h3>
-<div id="binList"></div>
+<!-- CONFIRM -->
+<div id="confirmBox">
+  <div class="confirm">
+    <p>Are you sure you want to delete?</p>
+    <div class="btns">
+      <button class="no" onclick="closeConfirm()">No</button>
+      <button class="yes" id="yesBtn">Yes</button>
+    </div>
+  </div>
 </div>
 
 <!-- SIDEBAR -->
@@ -194,7 +210,8 @@ justify-content:space-between;
 
 <!-- MAIN -->
 <div id="main">
-<header>VladGPT Pro</header>
+<header>VladGPT</header>
+
 <div id="chat"></div>
 
 <div id="inputArea">
@@ -206,14 +223,21 @@ justify-content:space-between;
 <script>
 
 let conversations = JSON.parse(localStorage.getItem('vlad')||'[]');
-let bin = JSON.parse(localStorage.getItem('vlad_bin')||'[]');
 let active=null;
+let deleteTarget=null;
 
 function save(){
 localStorage.setItem('vlad',JSON.stringify(conversations));
-localStorage.setItem('vlad_bin',JSON.stringify(bin));
 }
 
+/* INIT */
+function init(){
+if(conversations.length===0) newChat();
+else active=conversations[0].id;
+render();
+}
+
+/* NEW CHAT */
 function newChat(){
 const c={id:Date.now(),messages:[]};
 conversations.push(c);
@@ -222,81 +246,27 @@ save();
 render();
 }
 
-function getTitle(c){
+/* TITLE */
+function title(c){
 return c.messages.length?c.messages[0].text.slice(0,25):"New Chat";
 }
 
-/* DELETE */
-function deleteChat(id){
+/* DELETE FLOW */
+function askDelete(id){
+deleteTarget=id;
+document.getElementById('confirmBox').classList.add('show');
 
-document.getElementById('deleteOverlay').classList.add('show');
-
-setTimeout(()=>{
-
-const chat=conversations.find(c=>c.id===id);
-if(!chat) return;
-
-bin.push(chat);
+document.getElementById('yesBtn').onclick=()=>{
 conversations=conversations.filter(c=>c.id!==id);
-
 if(active===id) active=conversations[0]?.id||null;
-
 save();
 render();
-
-document.getElementById('deleteOverlay').classList.remove('show');
-
-showUndo(chat);
-
-},1200);
-}
-
-/* UNDO */
-function showUndo(chat){
-const u=document.createElement('div');
-u.innerText="Undo delete";
-u.style.cssText="position:fixed;bottom:20px;right:20px;background:#22c55e;padding:10px;border-radius:10px;cursor:pointer;z-index:9999;color:black";
-
-u.onclick=()=>{
-conversations.push(chat);
-bin=bin.filter(b=>b.id!==chat.id);
-save();
-render();
-u.remove();
+closeConfirm();
 };
-
-document.body.appendChild(u);
-setTimeout(()=>u.remove(),5000);
 }
 
-/* BIN */
-function toggleBin(){
-document.getElementById('binPanel').classList.toggle('open');
-renderBin();
-}
-
-function restore(id){
-const item=bin.find(b=>b.id===id);
-if(!item) return;
-
-conversations.push(item);
-bin=bin.filter(b=>b.id!==id);
-save();
-render();
-renderBin();
-}
-
-/* RENDER BIN */
-function renderBin(){
-const box=document.getElementById('binList');
-box.innerHTML='';
-
-bin.forEach(b=>{
-const d=document.createElement('div');
-d.className='binItem';
-d.innerHTML=`<span>${getTitle(b)}</span><button onclick="restore(${b.id})">restore</button>`;
-box.appendChild(d);
-});
+function closeConfirm(){
+document.getElementById('confirmBox').classList.remove('show');
 }
 
 /* RENDER */
@@ -305,14 +275,17 @@ const side=document.getElementById('sidebar');
 side.innerHTML='';
 
 conversations.forEach(c=>{
-const d=document.createElement('div');
-d.className='chatItem';
+const div=document.createElement('div');
+div.className='chatItem';
 
-d.innerHTML=`<span>${getTitle(c)}</span><button onclick="event.stopPropagation();deleteChat(${c.id})">🗑</button>`;
+div.innerHTML=`
+<span>${title(c)}</span>
+<button class="delBtn" onclick="event.stopPropagation();askDelete(${c.id})">x</button>
+`;
 
-d.onclick=()=>{active=c.id;render();};
+div.onclick=()=>{active=c.id;render();};
 
-side.appendChild(d);
+side.appendChild(div);
 });
 
 const chat=conversations.find(c=>c.id===active);
@@ -353,13 +326,15 @@ save();
 render();
 }
 
-/* ENTER */
 input.addEventListener('keydown',e=>{
 if(e.key==='Enter') sendMessage();
 });
 
-/* INIT */
-newChat();
+setTimeout(()=>{
+document.getElementById('loadingScreen').remove();
+},4500);
+
+init();
 
 </script>
 
