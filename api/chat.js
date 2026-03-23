@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     const { message } = req.body;
 
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+      "https://router.huggingface.co/v1/chat/completions",
       {
         method: "POST",
         headers: {
@@ -11,20 +11,19 @@ export default async function handler(req, res) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          inputs: message,
-          parameters: {
-            max_new_tokens: 200,
-            return_full_text: false
-          }
+          model: "mistralai/Mistral-7B-Instruct-v0.2",
+          messages: [
+            { role: "user", content: message }
+          ],
+          max_tokens: 200
         })
       }
     );
 
     const data = await response.json();
 
-    let reply =
-      data?.[0]?.generated_text ||
-      data?.generated_text ||
+    const reply =
+      data?.choices?.[0]?.message?.content ||
       data?.error ||
       "No response";
 
