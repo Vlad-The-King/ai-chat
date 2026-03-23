@@ -57,7 +57,6 @@ pointer-events:none;
 transition:.2s;
 z-index:10;
 }
-
 #overlay.show{
 opacity:1;
 pointer-events:auto;
@@ -80,9 +79,7 @@ transition:.3s ease;
 z-index:20;
 }
 
-#sidebar.open{
-left:0;
-}
+#sidebar.open{left:0;}
 
 .chatItem{
 display:flex;
@@ -172,7 +169,7 @@ border-radius:10px;
 cursor:pointer;
 }
 
-/* CONFIRM DELETE */
+/* CONFIRM */
 #confirmBox{
 position:fixed;
 inset:0;
@@ -297,7 +294,20 @@ animation:bounce 1s infinite ease-in-out;
 
 let conversations = JSON.parse(localStorage.getItem('vlad')||'[]');
 let active=null;
-let deleteTarget=null;
+
+/* SAVE */
+function save(){
+localStorage.setItem('vlad',JSON.stringify(conversations));
+}
+
+/* INIT → ALWAYS NEW CHAT ON REFRESH */
+function init(){
+const c={id:Date.now(),messages:[]};
+conversations.push(c);
+active=c.id;
+save();
+render();
+}
 
 /* SIDEBAR */
 function openSidebar(){
@@ -310,25 +320,14 @@ document.getElementById('sidebar').classList.remove('open');
 document.getElementById('overlay').classList.remove('show');
 }
 
-/* SAVE */
-function save(){
-localStorage.setItem('vlad',JSON.stringify(conversations));
-}
-
-/* INIT */
-function init(){
-if(conversations.length===0) newChat();
-else active=conversations[0].id;
-render();
-}
-
 /* NEW CHAT */
 function newChat(){
 const c={id:Date.now(),messages:[]};
-conversations.push(c);
+conversations.unshift(c);
 active=c.id;
 save();
 render();
+closeSidebar();
 }
 
 /* TITLE */
@@ -336,7 +335,9 @@ function title(c){
 return c.messages.length?c.messages[0].text.slice(0,25):"New Chat";
 }
 
-/* DELETE FLOW */
+/* DELETE */
+let deleteTarget=null;
+
 function askDelete(id){
 deleteTarget=id;
 document.getElementById('confirmBox').classList.add('show');
@@ -367,7 +368,7 @@ d.innerHTML=`
 <div class="dots">
 <div class="dot"></div>
 <div class="dot"></div>
-div class="dot"></div>
+<div class="dot"></div>
 </div>
 `;
 
