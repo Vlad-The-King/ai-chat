@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     const { message } = req.body;
 
     const response = await fetch(
-      "https://router.huggingface.co/v1/chat/completions",
+      "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium",
       {
         method: "POST",
         headers: {
@@ -11,11 +11,7 @@ export default async function handler(req, res) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "HuggingFaceH4/zephyr-7b-beta",
-          messages: [
-            { role: "user", content: message }
-          ],
-          max_tokens: 200
+          inputs: message
         })
       }
     );
@@ -23,9 +19,10 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     const reply =
-      data?.choices?.[0]?.message?.content ||
-      data?.error?.message ||
-      JSON.stringify(data);
+      data?.[0]?.generated_text ||
+      data?.generated_text ||
+      data?.error ||
+      "No response";
 
     return res.status(200).json({ reply });
 
