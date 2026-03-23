@@ -1,236 +1,334 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>VladGPT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VladGPT Pro</title>
 
 <style>
-* { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Arial,sans-serif;}
 
-body {
-  background: #eaffea;
-  overflow:hidden;
+/* LOADING SCREEN */
+#loadingScreen{
+position:fixed;
+inset:0;
+background:linear-gradient(135deg,#06281d,#0b3d2e,#0f5a3c);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:9999;
+animation:fadeOut 0.5s ease forwards;
+animation-delay:3s;
 }
 
-/* LOADING */
-#loading {
-  position:fixed;
-  inset:0;
-  background:#bff5bf;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
+.loaderText{
+font-size:42px;
+font-weight:800;
+color:#22c55e;
+letter-spacing:2px;
+animation:pulse 1s infinite;
 }
 
-.spinner {
-  width:55px;
-  height:55px;
-  border:5px solid white;
-  border-top:5px solid #1a7f1a;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
+@keyframes pulse{
+0%{transform:scale(1);opacity:0.7;}
+50%{transform:scale(1.1);opacity:1;}
+100%{transform:scale(1);opacity:0.7;}
 }
 
-@keyframes spin { 100% { transform:rotate(360deg); } }
-
-.dots {
-  margin-top:10px;
-  font-size:30px;
-  letter-spacing:3px;
-  animation:dots 1.2s infinite;
+@keyframes fadeOut{
+to{
+opacity:0;
+visibility:hidden;
+}
 }
 
-@keyframes dots {
-  0% { opacity:0.2; }
-  50% { opacity:1; }
-  100% { opacity:0.2; }
-}
-
-/* HEADER */
-header {
-  height:55px;
-  background:#c9f7c9;
-  display:flex;
-  align-items:center;
-  padding:0 15px;
-  font-weight:bold;
-  font-size:18px;
-}
-
-#menuBtn {
-  font-size:28px;
-  cursor:pointer;
-  margin-right:15px;
-  transition:0.3s;
-}
-
-#menuBtn:hover {
-  transform:scale(1.1);
+/* ORIGINAL UI */
+body{
+height:100vh;
+display:flex;
+background:linear-gradient(135deg,#06281d,#0b3d2e,#0f5a3c);
+color:white;
+overflow:hidden;
 }
 
 /* SIDEBAR */
-#sidebar {
-  position:fixed;
-  top:0;
-  left:-280px;
-  width:280px;
-  height:100%;
-  background:#d9ffd9;
-  padding:15px;
-  transition:0.35s cubic-bezier(.77,0,.18,1);
-  box-shadow:2px 0 20px rgba(0,0,0,0.1);
-  backdrop-filter: blur(10px);
+#sidebar{
+width:280px;
+background:rgba(0,0,0,0.35);
+backdrop-filter:blur(14px);
+display:flex;
+flex-direction:column;
+padding:12px;
 }
 
-#sidebar.open {
-  left:0;
+#newChat{
+padding:10px;
+background:#22c55e;
+border:none;
+color:black;
+border-radius:10px;
+cursor:pointer;
+font-weight:700;
+margin-bottom:10px;
+transition:.2s;
 }
 
-/* CHAT */
-#chat {
-  height:calc(100vh - 120px);
-  padding:15px;
-  overflow-y:auto;
+#newChat:hover{transform:scale(1.03);}
+
+.chatItem{
+padding:10px;
+background:rgba(255,255,255,0.08);
+margin-bottom:8px;
+border-radius:10px;
+cursor:pointer;
+display:flex;
+justify-content:space-between;
+align-items:center;
+animation:fadeIn .2s ease;
 }
 
-.msg {
-  max-width:70%;
-  padding:10px 12px;
-  margin:8px 0;
-  border-radius:14px;
-  animation:fade 0.2s ease;
+.chatItem.active{
+background:rgba(34,197,94,0.35);
 }
 
-@keyframes fade {
-  from { opacity:0; transform:translateY(5px); }
-  to { opacity:1; transform:translateY(0); }
+.chatTitle{
+flex:1;
+overflow:hidden;
+white-space:nowrap;
+text-overflow:ellipsis;
 }
 
-.user {
-  background:#9dff9d;
-  margin-left:auto;
+.deleteBtn{
+background:red;
+border:none;
+color:white;
+border-radius:6px;
+padding:3px 7px;
+cursor:pointer;
 }
 
-.ai {
-  background:white;
+/* MAIN */
+#main{
+flex:1;
+display:flex;
+flex-direction:column;
 }
 
-/* INPUT */
-#inputBox {
-  display:flex;
-  padding:10px;
-  gap:8px;
+header{
+padding:16px;
+text-align:center;
+font-size:24px;
+font-weight:800;
+background:rgba(0,0,0,0.25);
+backdrop-filter:blur(10px);
 }
 
-input {
-  flex:1;
-  padding:12px;
-  border-radius:10px;
-  border:1px solid #aaa;
-  outline:none;
+#chat{
+flex:1;
+overflow-y:auto;
+padding:20px;
+display:flex;
+flex-direction:column;
+gap:10px;
+scroll-behavior:smooth;
 }
 
-button {
-  padding:12px 16px;
-  border:none;
-  border-radius:10px;
-  background:#2ecc71;
-  color:white;
-  cursor:pointer;
-  transition:0.2s;
+.msg{
+max-width:75%;
+padding:10px 14px;
+border-radius:14px;
+word-wrap:break-word;
+animation:pop .15s ease;
+line-height:1.4;
 }
 
-button:hover {
-  transform:scale(1.05);
+@keyframes pop{
+from{transform:scale(.95);opacity:0;}
+to{transform:scale(1);opacity:1;}
+}
+
+.user{
+align-self:flex-end;
+background:#22c55e;
+color:black;
+}
+
+.ai{
+align-self:flex-start;
+background:rgba(255,255,255,0.12);
+border:1px solid rgba(255,255,255,0.15);
+}
+
+.typing{
+opacity:.7;
+font-style:italic;
+}
+
+#inputArea{
+display:flex;
+padding:12px;
+background:rgba(0,0,0,0.35);
+gap:10px;
+}
+
+#input{
+flex:1;
+padding:12px;
+border:none;
+border-radius:10px;
+outline:none;
+font-size:15px;
+}
+
+button.send{
+padding:12px 16px;
+border:none;
+border-radius:10px;
+background:#22c55e;
+color:black;
+font-weight:800;
+cursor:pointer;
+transition:.2s;
+}
+
+button.send:hover{transform:scale(1.05);}
+
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(5px);}
+to{opacity:1;transform:translateY(0);}
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOADING -->
-<div id="loading">
-  <div class="spinner"></div>
-  <div class="dots">...</div>
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+  <div class="loaderText">VladGPT</div>
 </div>
 
-<!-- SIDEBAR -->
 <div id="sidebar">
-  <h3>Conversații</h3>
+<button id="newChat">+ New Chat</button>
+<div id="chatList"></div>
 </div>
 
-<!-- HEADER -->
-<header>
-  <div id="menuBtn">☰</div>
-  VladGPT
-</header>
-
-<!-- CHAT -->
+<div id="main">
+<header>VladGPT Pro</header>
 <div id="chat"></div>
 
-<!-- INPUT -->
-<div id="inputBox">
-  <input id="text" placeholder="Scrie mesaj..." />
-  <button onclick="send()">→</button>
+<div id="inputArea">
+<input id="input" placeholder="Ask something..." />
+<button class="send" onclick="sendMessage()">Send</button>
+</div>
 </div>
 
 <script>
-const sidebar = document.getElementById("sidebar");
-const chat = document.getElementById("chat");
+let conversations = JSON.parse(localStorage.getItem('vladgpt_chats') || '[]');
+let activeChat = null;
 
-document.getElementById("menuBtn").onclick = () => {
-  sidebar.classList.toggle("open");
-};
+const chatBox = document.getElementById('chat');
+const chatList = document.getElementById('chatList');
+const input = document.getElementById('input');
 
-/* LOADING 3 sec */
-setTimeout(() => {
-  document.getElementById("loading").style.opacity = "0";
-  setTimeout(() => {
-    document.getElementById("loading").style.display = "none";
-  }, 300);
-}, 3000);
+function save(){
+localStorage.setItem('vladgpt_chats', JSON.stringify(conversations));
+}
 
-/* CHAT MEMORY */
-let messages = JSON.parse(localStorage.getItem("chat") || "[]");
+function newChat(){
+const chat = {id:Date.now(), title:"New chat", messages:[]};
+conversations.unshift(chat);
+activeChat = chat.id;
+save();render();
+}
+
+function selectChat(id){
+activeChat = id;
+render();
+}
+
+function deleteChat(id,e){
+e.stopPropagation();
+conversations = conversations.filter(c=>c.id!==id);
+if(activeChat===id) activeChat = conversations[0]?.id || null;
+save();render();
+}
+
+function autoTitle(chat){
+if(chat.title !== "New chat") return;
+if(chat.messages.length>0){
+chat.title = chat.messages[0].text.slice(0,25);
+}
+}
 
 function render(){
-  chat.innerHTML = "";
-  messages.forEach(m => {
-    const div = document.createElement("div");
-    div.className = "msg " + m.role;
-    div.textContent = m.text;
-    chat.appendChild(div);
-  });
-  chat.scrollTop = chat.scrollHeight;
+chatList.innerHTML='';
+chatBox.innerHTML='';
+
+conversations.forEach(c=>{
+const div=document.createElement('div');
+div.className='chatItem'+(c.id===activeChat?' active':'');
+div.onclick=()=>selectChat(c.id);
+div.innerHTML=`<div class='chatTitle'>${c.title}</div><button class='deleteBtn' onclick='deleteChat(${c.id},event)'>x</button>`;
+chatList.appendChild(div);
+});
+
+const current = conversations.find(c=>c.id===activeChat);
+if(!current) return;
+
+current.messages.forEach(m=>{
+const d=document.createElement('div');
+d.className='msg '+m.role;
+d.innerText=m.text;
+chatBox.appendChild(d);
+});
+
+chatBox.scrollTop=chatBox.scrollHeight;
 }
+
+function addTyping(){
+const d=document.createElement('div');
+d.className='msg ai typing';
+d.innerText='AI is typing...';
+d.id='typing';
+chatBox.appendChild(d);
+chatBox.scrollTop=chatBox.scrollHeight;
+}
+
+function removeTyping(){
+const t=document.getElementById('typing');
+if(t) t.remove();
+}
+
+async function sendMessage(){
+const text=input.value.trim();
+if(!text||!activeChat) return;
+
+const chat=conversations.find(c=>c.id===activeChat);
+chat.messages.push({role:'user',text});
+input.value='';
 render();
 
-/* SEND */
-async function send(){
-  const input = document.getElementById("text");
-  const text = input.value;
-  if(!text) return;
+addTyping();
 
-  messages.push({role:"user", text});
-  render();
-  input.value = "";
+const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+const data=await res.json();
 
-  const res = await fetch("/api/chat", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({message:text})
-  });
-
-  const data = await res.json();
-
-  messages.push({role:"ai", text:data.reply});
-  localStorage.setItem("chat", JSON.stringify(messages));
-
-  render();
+removeTyping();
+chat.messages.push({role:'ai',text:data.reply});
+autoTitle(chat);
+save();render();
 }
+
+input.addEventListener('keypress',e=>{
+if(e.key==='Enter') sendMessage();
+});
+
+newChat();
+
+/* REMOVE LOADING AFTER 3s */
+setTimeout(()=>{
+document.getElementById('loadingScreen').style.display='none';
+},3000);
 </script>
 
 </body>
