@@ -10,17 +10,33 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [{ role: "user", content: message }]
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: message }
+        ],
+        temperature: 0.7
       })
     });
 
     const data = await response.json();
 
-    res.status(200).json({
-      reply: data.choices?.[0]?.message?.content || "No response"
+    console.log("OPENAI RAW RESPONSE:", JSON.stringify(data));
+
+    if (!response.ok) {
+      return res.status(500).json({
+        reply: data.error?.message || "OpenAI API error"
+      });
+    }
+
+    const reply = data?.choices?.[0]?.message?.content;
+
+    return res.status(200).json({
+      reply: reply || "Empty response from AI"
     });
 
   } catch (err) {
-    res.status(500).json({ reply: "Error API" });
+    return res.status(500).json({
+      reply: err.message || "Server error"
+    });
   }
 }
