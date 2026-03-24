@@ -13,7 +13,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: "You are VladGPT Pro. You can use **bold text** when needed."
+            content: "You are VladGPT Pro. You respond clearly and can use **bold text**."
           },
           {
             role: "user",
@@ -29,11 +29,13 @@ export default async function handler(req, res) {
 
     const reply =
       data?.choices?.[0]?.message?.content ||
-      "AI error";
+      data?.error?.message ||
+      "No response";
 
     res.status(200).json({ reply });
 
   } catch (err) {
+    console.log(err);
     res.status(500).json({ reply: "Server error" });
   }
 }
