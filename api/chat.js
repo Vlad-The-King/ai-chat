@@ -3,27 +3,21 @@ export default async function handler(req, res) {
     const { message } = req.body;
     const msg = message.toLowerCase();
 
-    // DETECT NAME QUESTIONS
-    const nameQuestions = [
-      "cum te numesti","ce nume ai","cine esti",
-      "who are you","what is your name",
-      "como te llamas","qui es-tu","wie heißt du"
-    ];
-
-    const isNameQuestion = nameQuestions.some(q => msg.includes(q));
+    // 👉 doar override pentru nume
+    const isNameQuestion =
+      msg.includes("cum te numesti") ||
+      msg.includes("ce nume ai") ||
+      msg.includes("cine esti") ||
+      msg.includes("who are you") ||
+      msg.includes("what is your name");
 
     if (isNameQuestion) {
-      let reply = "I am VladGPT Pro";
-
-      if (msg.includes("cum") || msg.includes("nume")) reply = "Eu sunt VladGPT Pro";
-      if (msg.includes("como")) reply = "Soy VladGPT Pro";
-      if (msg.includes("qui")) reply = "Je suis VladGPT Pro";
-      if (msg.includes("wie")) reply = "Ich bin VladGPT Pro";
-
-      return res.status(200).json({ reply });
+      return res.status(200).json({
+        reply: "I am VladGPT Pro"
+      });
     }
 
-    // GROQ REQUEST
+    // 👉 GROQ NORMAL (pentru TOT RESTUL)
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -35,10 +29,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: `
-You are VladGPT Pro, a smart AI.
-Answer clearly and helpfully.
-`
+            content: "You are VladGPT Pro, a helpful AI assistant."
           },
           {
             role: "user",
@@ -52,22 +43,19 @@ Answer clearly and helpfully.
 
     const data = await response.json();
 
-    console.log("GROQ RESPONSE:", data); // 🔥 IMPORTANT
+    console.log("GROQ:", data);
 
-    // FIX IMPORTANT
-    if (!data.choices || !data.choices[0]) {
-      return res.status(200).json({
-        reply: "AI error (check Vercel logs)"
-      });
-    }
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      data?.error?.message ||
+      "No response";
 
-    const reply = data.choices[0].message.content;
-
-    res.status(200).json({ reply });
+    return res.status(200).json({ reply });
 
   } catch (err) {
-    res.status(500).json({
-      reply: "Server error: " + err.message
+    console.log(err);
+    return res.status(500).json({
+      reply: "Server error"
     });
   }
 }
