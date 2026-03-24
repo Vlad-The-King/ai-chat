@@ -1,457 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>VladGPT</title>
-
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Arial,sans-serif;}
-
-/* LOADING */
-#loadingScreen{
-position:fixed;
-inset:0;
-background:radial-gradient(circle,#06281d,#000);
-display:flex;
-align-items:center;
-justify-content:center;
-z-index:9999;
-animation:fadeOut .8s ease forwards;
-animation-delay:4.5s;
-}
-
-.loadingText{
-font-size:64px;
-font-weight:900;
-color:#22c55e;
-animation:float 1.2s infinite ease-in-out;
-text-shadow:0 0 20px #22c55e;
-}
-
-@keyframes float{
-0%,100%{transform:translateY(0);}
-50%{transform:translateY(-12px);}
-}
-
-@keyframes fadeOut{
-to{opacity:0;visibility:hidden;}
-}
-
-/* LAYOUT */
-body{
-height:100vh;
-display:flex;
-background:linear-gradient(135deg,#06281d,#0b3d2e,#0f5a3c);
-color:white;
-overflow:hidden;
-}
-
-/* OVERLAY */
-#overlay{
-position:fixed;
-inset:0;
-background:rgba(0,0,0,0.4);
-opacity:0;
-pointer-events:none;
-transition:.2s;
-z-index:10;
-}
-#overlay.show{
-opacity:1;
-pointer-events:auto;
-}
-
-/* SIDEBAR */
-#sidebar{
-position:fixed;
-left:-300px;
-top:0;
-bottom:0;
-width:280px;
-background:rgba(0,0,0,0.45);
-backdrop-filter:blur(12px);
-padding:10px;
-display:flex;
-flex-direction:column;
-gap:8px;
-transition:.3s ease;
-z-index:20;
-}
-
-#sidebar.open{left:0;}
-
-.chatItem{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:10px;
-background:rgba(255,255,255,0.08);
-border-radius:10px;
-cursor:pointer;
-}
-
-.chatItem:hover{
-background:rgba(34,197,94,0.25);
-}
-
-.delBtn{
-background:red;
-border:none;
-color:white;
-padding:3px 7px;
-border-radius:6px;
-cursor:pointer;
-}
-
-/* MAIN */
-#main{
-flex:1;
-display:flex;
-flex-direction:column;
-}
-
-/* TOP BAR */
-.topBar{
-padding:10px;
-background:rgba(0,0,0,0.25);
-}
-
-.menuBtn{
-background:none;
-border:none;
-color:white;
-font-size:28px;
-cursor:pointer;
-}
-
-/* CHAT */
-#chat{
-flex:1;
-overflow-y:auto;
-padding:15px;
-display:flex;
-flex-direction:column;
-gap:10px;
-}
-
-.msg{
-max-width:75%;
-padding:10px;
-border-radius:12px;
-}
-
-.user{align-self:flex-end;background:#22c55e;color:black;}
-.ai{align-self:flex-start;background:rgba(255,255,255,0.12);}
-
-/* INPUT */
-#inputArea{
-display:flex;
-padding:10px;
-gap:10px;
-background:rgba(0,0,0,0.4);
-}
-
-#input{
-flex:1;
-padding:12px;
-border:none;
-border-radius:10px;
-outline:none;
-}
-
-.send{
-background:#22c55e;
-border:none;
-padding:12px 16px;
-font-weight:700;
-border-radius:10px;
-cursor:pointer;
-}
-
-/* CONFIRM */
-#confirmBox{
-position:fixed;
-inset:0;
-display:flex;
-align-items:center;
-justify-content:center;
-background:rgba(0,0,0,0.6);
-opacity:0;
-pointer-events:none;
-transition:.2s;
-z-index:9999;
-}
-
-#confirmBox.show{
-opacity:1;
-pointer-events:auto;
-}
-
-.confirm{
-background:#111;
-padding:20px;
-border-radius:12px;
-width:260px;
-text-align:center;
-}
-
-.btns{
-display:flex;
-gap:10px;
-margin-top:15px;
-}
-
-.btns button{
-flex:1;
-padding:10px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-font-weight:700;
-}
-
-.yes{background:#22c55e;color:black;}
-.no{background:#444;color:white;}
-
-/* TYPING */
-.typing{
-align-self:flex-start;
-background:rgba(255,255,255,0.10);
-padding:10px 14px;
-border-radius:12px;
-display:flex;
-align-items:center;
-gap:10px;
-font-style:italic;
-}
-
-.dots{
-display:flex;
-gap:4px;
-}
-
-.dot{
-width:8px;
-height:8px;
-border-radius:50%;
-background:#22c55e;
-animation:bounce 1s infinite ease-in-out;
-}
-
-.dot:nth-child(2){animation-delay:.2s;}
-.dot:nth-child(3){animation-delay:.4s;}
-
-@keyframes bounce{
-0%,100%{transform:translateY(0);opacity:.4;}
-50%{transform:translateY(-6px);opacity:1;}
-}
-
-</style>
+  <title>VladGPT Login</title>
 </head>
 
 <body>
 
-<!-- LOADING -->
-<div id="loadingScreen">
-  <div class="loadingText">VladGPT</div>
+<div id="auth">
+  <h2>VladGPT Login</h2>
+
+  <input id="email" placeholder="email">
+  <input id="password" type="password" placeholder="password">
+
+  <button onclick="signup()">Create account</button>
+  <button onclick="login()">Login</button>
+
+  <p id="msg"></p>
 </div>
 
-<!-- OVERLAY -->
-<div id="overlay" onclick="closeSidebar()"></div>
+<div id="app" style="display:none;">
+  <h2>Welcome to VladGPT</h2>
 
-<!-- SIDEBAR -->
-<div id="sidebar"></div>
+  <p id="userInfo"></p>
 
-<!-- CONFIRM -->
-<div id="confirmBox">
-  <div class="confirm">
-    <p>Are you sure you want to delete?</p>
-    <div class="btns">
-      <button class="no" onclick="closeConfirm()">No</button>
-      <button class="yes" id="yesBtn">Yes</button>
-    </div>
-  </div>
+  <button onclick="logout()">Logout</button>
+
+  <hr>
+
+  <p>Chat app goes here...</p>
 </div>
 
-<!-- MAIN -->
-<div id="main">
+<script type="module">
 
-<div class="topBar">
-<button class="menuBtn" onclick="openSidebar()">•••</button>
-</div>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-<div id="chat"></div>
-
-<div id="inputArea">
-<input id="input" placeholder="Ask..." />
-<button class="send" onclick="sendMessage()">Send</button>
-</div>
-
-</div>
-
-<script>
-
-let conversations = JSON.parse(localStorage.getItem('vlad')||'[]');
-let active=null;
-
-/* SAVE */
-function save(){
-localStorage.setItem('vlad',JSON.stringify(conversations));
-}
-
-/* INIT → ALWAYS NEW CHAT ON REFRESH */
-function init(){
-const c={id:Date.now(),messages:[]};
-conversations.push(c);
-active=c.id;
-save();
-render();
-}
-
-/* SIDEBAR */
-function openSidebar(){
-document.getElementById('sidebar').classList.add('open');
-document.getElementById('overlay').classList.add('show');
-}
-
-function closeSidebar(){
-document.getElementById('sidebar').classList.remove('open');
-document.getElementById('overlay').classList.remove('show');
-}
-
-/* NEW CHAT */
-function newChat(){
-const c={id:Date.now(),messages:[]};
-conversations.unshift(c);
-active=c.id;
-save();
-render();
-closeSidebar();
-}
-
-/* TITLE */
-function title(c){
-return c.messages.length?c.messages[0].text.slice(0,25):"New Chat";
-}
-
-/* DELETE */
-let deleteTarget=null;
-
-function askDelete(id){
-deleteTarget=id;
-document.getElementById('confirmBox').classList.add('show');
-
-document.getElementById('yesBtn').onclick=()=>{
-conversations=conversations.filter(c=>c.id!==id);
-if(active===id) active=conversations[0]?.id||null;
-save();
-render();
-closeConfirm();
+/* 🔥 Firebase config */
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_ID",
 };
-}
 
-function closeConfirm(){
-document.getElementById('confirmBox').classList.remove('show');
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-/* TYPING */
-function showTyping(){
-const box=document.getElementById('chat');
+/* ================= AUTH ================= */
 
-const d=document.createElement('div');
-d.className='typing';
-d.id='typing';
+window.signup = async function () {
+  const email = emailInput().value;
+  const pass = passInput().value;
 
-d.innerHTML=`
-<span>VladGPT is typing</span>
-<div class="dots">
-<div class="dot"></div>
-<div class="dot"></div>
-<div class="dot"></div>
-</div>
-`;
+  try {
+    const user = await createUserWithEmailAndPassword(auth, email, pass);
+    await sendEmailVerification(user.user);
 
-box.appendChild(d);
-box.scrollTop=box.scrollHeight;
-}
+    setMsg("Check email for verification!");
+  } catch (e) {
+    setMsg(e.message);
+  }
+};
 
-function hideTyping(){
-const t=document.getElementById('typing');
-if(t) t.remove();
-}
+window.login = async function () {
+  const email = emailInput().value;
+  const pass = passInput().value;
 
-/* RENDER */
-function render(){
-const side=document.getElementById('sidebar');
-side.innerHTML='';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    setMsg(e.message);
+  }
+};
 
-conversations.forEach(c=>{
-const div=document.createElement('div');
-div.className='chatItem';
+window.logout = async function () {
+  await signOut(auth);
+};
 
-div.innerHTML=`
-<span>${title(c)}</span>
-<button class="delBtn" onclick="event.stopPropagation();askDelete(${c.id})">x</button>
-`;
+/* ================= STATE ================= */
 
-div.onclick=()=>{active=c.id;render();closeSidebar();};
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("app").style.display = "block";
 
-side.appendChild(div);
+    document.getElementById("userInfo").innerText =
+      "Logged in as: " + user.email;
+
+  } else {
+    document.getElementById("auth").style.display = "block";
+    document.getElementById("app").style.display = "none";
+  }
 });
 
-const chat=conversations.find(c=>c.id===active);
-const box=document.getElementById('chat');
-box.innerHTML='';
+/* ================= HELPERS ================= */
 
-if(!chat) return;
-
-chat.messages.forEach(m=>{
-const d=document.createElement('div');
-d.className='msg '+m.role;
-d.innerText=m.text;
-box.appendChild(d);
-});
+function emailInput(){
+  return document.getElementById("email");
 }
 
-/* SEND */
-async function sendMessage(){
-const text=input.value.trim();
-if(!text||!active) return;
-
-const chat=conversations.find(c=>c.id===active);
-
-chat.messages.push({role:'user',text});
-input.value='';
-render();
-
-showTyping();
-
-const res=await fetch('/api/chat',{
-method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({message:text})
-});
-
-const data=await res.json();
-
-hideTyping();
-
-chat.messages.push({role:'ai',text:data.reply});
-
-save();
-render();
+function passInput(){
+  return document.getElementById("password");
 }
 
-input.addEventListener('keydown',e=>{
-if(e.key==='Enter') sendMessage();
-});
-
-setTimeout(()=>{
-document.getElementById('loadingScreen').remove();
-},4500);
-
-init();
+function setMsg(t){
+  document.getElementById("msg").innerText = t;
+}
 
 </script>
 
