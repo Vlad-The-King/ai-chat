@@ -3,17 +3,17 @@ export default async function handler(req, res) {
     const { message } = req.body;
 
     const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`,
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          messages: [
-            { role: "user", content: message }
+          contents: [
+            {
+              parts: [{ text: message }]
+            }
           ]
         })
       }
@@ -22,15 +22,12 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     const reply =
-      data?.choices?.[0]?.message?.content ||
-      data?.error?.message ||
-      JSON.stringify(data);
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response";
 
-    return res.status(200).json({ reply });
+    res.status(200).json({ reply });
 
   } catch (err) {
-    return res.status(500).json({
-      reply: err.message
-    });
+    res.status(500).json({ reply: "Error: " + err.message });
   }
 }
