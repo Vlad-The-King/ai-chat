@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
     if (isNameQuestion) {
       return res.status(200).json({
-        reply: "I am VladGPT Pro"
+        reply: "Sunt VladGPT Pro, un asistent inteligent și util, aici pentru a te ajuta cu orice întrebare sau problemă ai. Cum te pot ajuta astăzi?"
       });
     }
 
