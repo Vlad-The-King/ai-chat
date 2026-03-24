@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-<title>VladGPT Auth</title>
+<title>VladGPT Login</title>
 
 <style>
 body{
@@ -15,7 +14,6 @@ justify-content:center;
 align-items:center;
 font-family:Arial;
 background:linear-gradient(135deg,#052e1f,#0b5a3c,#0f7a52);
-overflow:hidden;
 }
 
 /* CARD */
@@ -37,7 +35,6 @@ to{transform:scale(1);opacity:1}
 h2{
 color:white;
 text-align:center;
-margin-bottom:15px;
 }
 
 input{
@@ -85,9 +82,11 @@ text-align:center;
 
 <body>
 
+<!-- LOGIN -->
 <div class="card" id="authBox">
-  <h2>VladGPT Login</h2>
+  <h2>VladGPT</h2>
 
+  <input id="username" placeholder="Username">
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
 
@@ -97,10 +96,16 @@ text-align:center;
   <div id="msg"></div>
 </div>
 
+<!-- APP -->
 <div id="app">
   <h2>Welcome to VladGPT</h2>
   <p id="userInfo"></p>
+
   <button onclick="logout()">Logout</button>
+
+  <hr>
+
+  <p>Chat system goes here...</p>
 </div>
 
 <script type="module">
@@ -110,12 +115,12 @@ import {
 getAuth,
 createUserWithEmailAndPassword,
 signInWithEmailAndPassword,
-sendEmailVerification,
+updateProfile,
 onAuthStateChanged,
 signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-/* 🔥 FIREBASE CONFIG (REPLACE THIS) */
+/* 🔥 FIREBASE CONFIG (REPLACE WITH YOURS) */
 const firebaseConfig = {
 apiKey: "YOUR_API_KEY",
 authDomain: "YOUR_AUTH_DOMAIN",
@@ -126,56 +131,65 @@ appId: "YOUR_APP_ID"
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-/* ================= AUTH ================= */
+/* ================= SIGNUP ================= */
 
-window.signup = async function(){
+window.signup = async function () {
+const email = document.getElementById("email").value;
+const pass = document.getElementById("password").value;
+const username = document.getElementById("username").value;
+
+try {
+const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+
+await updateProfile(userCred.user, {
+displayName: username
+});
+
+msg("Account created!");
+} catch (e) {
+msg(e.message);
+}
+};
+
+/* ================= LOGIN ================= */
+
+window.login = async function () {
 const email = document.getElementById("email").value;
 const pass = document.getElementById("password").value;
 
-try{
-const user = await createUserWithEmailAndPassword(auth,email,pass);
-await sendEmailVerification(user.user);
-msg("Check email for verification!");
-}catch(e){
+try {
+await signInWithEmailAndPassword(auth, email, pass);
+} catch (e) {
 msg(e.message);
 }
-}
+};
 
-window.login = async function(){
-const email = document.getElementById("email").value;
-const pass = document.getElementById("password").value;
+/* ================= LOGOUT ================= */
 
-try{
-await signInWithEmailAndPassword(auth,email,pass);
-}catch(e){
-msg(e.message);
-}
-}
-
-window.logout = async function(){
+window.logout = async function () {
 await signOut(auth);
-}
+};
 
 /* ================= STATE ================= */
 
-onAuthStateChanged(auth,(user)=>{
-if(user){
-document.getElementById("authBox").style.display="none";
-document.getElementById("app").style.display="block";
+onAuthStateChanged(auth, (user) => {
+if (user) {
+document.getElementById("authBox").style.display = "none";
+document.getElementById("app").style.display = "block";
 
 document.getElementById("userInfo").innerText =
-"Logged in as: " + user.email;
-}
-else{
-document.getElementById("authBox").style.display="block";
-document.getElementById("app").style.display="none";
+"Logged in as: " + (user.displayName || user.email);
+
+} else {
+document.getElementById("authBox").style.display = "block";
+document.getElementById("app").style.display = "none";
 }
 });
 
-/* ================= HELP ================= */
+/* ================= MSG ================= */
 
 function msg(t){
-document.getElementById("msg").innerText=t;
+document.getElementById("msg").innerText = t;
 }
 
 </script>
