@@ -1,65 +1,117 @@
-export default async function handler(req, res) {
-  try {
-    const { message } = req.body;
-    const msg = message.toLowerCase();
+<script>
 
-    // 👉 detectare întrebare despre nume
-    const isNameQuestion =
-      msg.includes("cum te numesti") ||
-      msg.includes("ce nume ai") ||
-      msg.includes("cine esti") ||
-      msg.includes("who are you") ||
-      msg.includes("what is your name");
+let conversations = JSON.parse(localStorage.getItem('vladgpt')||'[]');
+let active=null;
 
-    if (isNameQuestion) {
-      return res.status(200).json({
-        reply: "I am VladGPT Pro"
-      });
-    }
-
-    // 👉 GROQ REQUEST (MODEL ACTUAL)
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content: `
-You are VladGPT Pro, a smart and helpful AI assistant.
-Answer clearly, correctly and naturally.
-`
-          },
-          {
-            role: "user",
-            content: message
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 800
-      })
-    });
-
-    const data = await response.json();
-
-    console.log("GROQ RESPONSE:", data);
-
-    // 👉 SAFE RESPONSE HANDLING
-    const reply =
-      data?.choices?.[0]?.message?.content ||
-      data?.error?.message ||
-      "AI error";
-
-    return res.status(200).json({ reply });
-
-  } catch (err) {
-    console.log("SERVER ERROR:", err);
-    return res.status(500).json({
-      reply: "Server error"
-    });
-  }
+/* NEW CHAT */
+function newChat(){
+const c={id:Date.now(),messages:[]};
+conversations.push(c);
+active=c.id;
+save();
+render();
 }
+
+function save(){
+localStorage.setItem('vladgpt',JSON.stringify(conversations));
+}
+
+/* SIDEBAR */
+function toggleSidebar(){
+document.getElementById('sidebar').classList.toggle('open');
+document.getElementById('overlay').classList.toggle('show');
+}
+
+function closeSidebar(){
+document.getElementById('sidebar').classList.remove('open');
+document.getElementById('overlay').classList.remove('show');
+}
+
+/* 👉 FORMAT TEXT (BOLD / ITALIC) */
+function formatText(text){
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")   // **bold**
+    .replace(/\*(.*?)\*/g, "<i>$1</i>");     // *italic*
+}
+
+/* TITLE */
+function getTitle(chat){
+if(!chat.messages.length) return "New Chat";
+return chat.messages[0].text.slice(0,28);
+}
+
+/* RENDER */
+function render(){
+const sidebar=document.getElementById('sidebar');
+sidebar.innerHTML='';
+
+conversations.forEach(c=>{
+const div=document.createElement('div');
+div.className='chatItem';
+div.innerText=getTitle(c);
+div.onclick=()=>openChat(c.id);
+sidebar.appendChild(div);
+});
+
+const chat=conversations.find(c=>c.id===active);
+const box=document.getElementById('chat');
+box.innerHTML='';
+
+if(!chat) return;
+
+chat.messages.forEach(m=>{
+const d=document.createElement('div');
+d.className='msg '+m.role;
+
+/* 👉 IMPORTANT: HTML render */
+d.innerHTML = formatText(m.text);
+
+box.appendChild(d);
+});
+}
+
+/* OPEN CHAT */
+function openChat(id){
+active=id;
+render();
+closeSidebar();
+}
+
+/* SEND */
+async function sendMessage(){
+const text=input.value.trim();
+if(!text||!active) return;
+
+const chat=conversations.find(c=>c.id===active);
+
+chat.messages.push({role:'user',text});
+input.value='';
+render();
+
+const res=await fetch('/api/chat',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({message:text})
+});
+
+const data=await res.json();
+chat.messages.push({role:'ai',text:data.reply});
+
+save();
+render();
+}
+
+/* ENTER */
+input.addEventListener('keypress',e=>{
+if(e.key==='Enter') sendMessage();
+});
+
+/* INIT */
+function init(){
+if(conversations.length===0) newChat();
+else active=conversations[0].id;
+render();
+}
+init();
+
+</script>
