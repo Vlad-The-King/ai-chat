@@ -1,49 +1,29 @@
 export default async function handler(req, res) {
   try {
     const { message } = req.body;
-
     const msg = message.toLowerCase();
 
-    // DETECT NAME QUESTIONS (multi-language basic)
+    // DETECT NAME QUESTIONS
     const nameQuestions = [
-      "cum te numesti",
-      "ce nume ai",
-      "cine esti",
-      "who are you",
-      "what is your name",
-      "your name",
-      "como te llamas",
-      "qui es-tu",
-      "wie heißt du"
+      "cum te numesti","ce nume ai","cine esti",
+      "who are you","what is your name",
+      "como te llamas","qui es-tu","wie heißt du"
     ];
 
     const isNameQuestion = nameQuestions.some(q => msg.includes(q));
 
-    // Dacă întreabă de nume → răspuns direct
     if (isNameQuestion) {
-
       let reply = "I am VladGPT Pro";
 
-      if (msg.includes("cum") || msg.includes("nume")) {
-        reply = "Eu sunt VladGPT Pro";
-      }
-
-      if (msg.includes("como")) {
-        reply = "Soy VladGPT Pro";
-      }
-
-      if (msg.includes("qui")) {
-        reply = "Je suis VladGPT Pro";
-      }
-
-      if (msg.includes("wie")) {
-        reply = "Ich bin VladGPT Pro";
-      }
+      if (msg.includes("cum") || msg.includes("nume")) reply = "Eu sunt VladGPT Pro";
+      if (msg.includes("como")) reply = "Soy VladGPT Pro";
+      if (msg.includes("qui")) reply = "Je suis VladGPT Pro";
+      if (msg.includes("wie")) reply = "Ich bin VladGPT Pro";
 
       return res.status(200).json({ reply });
     }
 
-    // NORMAL AI REQUEST
+    // GROQ REQUEST
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -56,11 +36,8 @@ export default async function handler(req, res) {
           {
             role: "system",
             content: `
-You are VladGPT Pro created by Vlad.
-
-If the user asks your name or who you are, ALWAYS respond that your name is VladGPT Pro in the same language as the user.
-
-You are very intelligent, clear, and helpful.
+You are VladGPT Pro, a smart AI.
+Answer clearly and helpfully.
 `
           },
           {
@@ -75,13 +52,22 @@ You are very intelligent, clear, and helpful.
 
     const data = await response.json();
 
-    const reply =
-      data.choices?.[0]?.message?.content ||
-      "No response";
+    console.log("GROQ RESPONSE:", data); // 🔥 IMPORTANT
+
+    // FIX IMPORTANT
+    if (!data.choices || !data.choices[0]) {
+      return res.status(200).json({
+        reply: "AI error (check Vercel logs)"
+      });
+    }
+
+    const reply = data.choices[0].message.content;
 
     res.status(200).json({ reply });
 
   } catch (err) {
-    res.status(500).json({ reply: "Error: " + err.message });
+    res.status(500).json({
+      reply: "Server error: " + err.message
+    });
   }
 }
