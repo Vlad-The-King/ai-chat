@@ -1,29 +1,69 @@
-addTyping();
+export default async function handler(req, res) {
+  try {
+    const { message } = req.body;
+    const msg = message.toLowerCase();
 
-try {
-  const res = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: text })
-  });
+    // 👉 detectare întrebare despre nume
+    const isNameQuestion =
+      msg.includes("cum te numesti") ||
+      msg.includes("ce nume ai") ||
+      msg.includes("cine esti") ||
+      msg.includes("who are you") ||
+      msg.includes("what is your name");
 
-  const data = await res.json();
+    if (isNameQuestion) {
+      return res.status(200).json({
+        reply: "I am VladGPT Pro"
+      });
+    }
 
-  removeTyping();
+    // 👉 GROQ REQUEST
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: `
+You are VladGPT Pro, a smart and helpful AI assistant.
+You can use **bold text** when appropriate.
+`
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 800
+      })
+    });
 
-  chat.messages.push({
-    role: 'ai',
-    text: data.reply || "No response"
-  });
+    const data = await response.json();
 
-} catch (err) {
-  removeTyping();
+    console.log("GROQ RESPONSE:", data);
 
-  chat.messages.push({
-    role: 'ai',
-    text: "Error: server not responding"
-  });
+    let reply =
+      data?.choices?.[0]?.message?.content ||
+      data?.error?.message ||
+      "AI error";
+
+    // 👉 CONVERT **text** -> HTML <b>text</b>
+    reply = reply
+      .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+      .replace(/\*(.*?)\*/g, "<i>$1</i>");
+
+    return res.status(200).json({ reply });
+
+  } catch (err) {
+    console.log("SERVER ERROR:", err);
+    return res.status(500).json({
+      reply: "Server error"
+    });
+  }
 }
-
-save();
-render();
