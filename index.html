@@ -3,78 +3,248 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>VladGPT Login</title>
+<title>VladGPT</title>
 
 <style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,Arial,sans-serif;}
+
+/* LOADING */
+#loadingScreen{
+position:fixed;
+inset:0;
+background:radial-gradient(circle,#06281d,#000);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:9999;
+animation:fadeOut .8s ease forwards;
+animation-delay:4.5s;
+}
+
+.loadingText{
+font-size:64px;
+font-weight:900;
+color:#22c55e;
+animation:float 1.2s infinite ease-in-out;
+text-shadow:0 0 20px #22c55e;
+}
+
+@keyframes float{
+0%,100%{transform:translateY(0);}
+50%{transform:translateY(-12px);}
+}
+
+@keyframes fadeOut{
+to{opacity:0;visibility:hidden;}
+}
+
+/* LAYOUT */
 body{
-margin:0;
 height:100vh;
 display:flex;
-justify-content:center;
-align-items:center;
-font-family:Arial;
-background:linear-gradient(135deg,#052e1f,#0b5a3c,#0f7a52);
-}
-
-/* CARD */
-.card{
-width:340px;
-padding:25px;
-border-radius:16px;
-background:rgba(255,255,255,0.08);
-backdrop-filter:blur(15px);
-box-shadow:0 0 30px rgba(0,0,0,0.4);
-animation:pop .5s ease;
-}
-
-@keyframes pop{
-from{transform:scale(.8);opacity:0}
-to{transform:scale(1);opacity:1}
-}
-
-h2{
+background:linear-gradient(135deg,#06281d,#0b3d2e,#0f5a3c);
 color:white;
-text-align:center;
+overflow:hidden;
 }
 
-input{
-width:100%;
+/* OVERLAY */
+#overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.4);
+opacity:0;
+pointer-events:none;
+transition:.2s;
+z-index:10;
+}
+#overlay.show{
+opacity:1;
+pointer-events:auto;
+}
+
+/* SIDEBAR */
+#sidebar{
+position:fixed;
+left:-300px;
+top:0;
+bottom:0;
+width:280px;
+background:rgba(0,0,0,0.45);
+backdrop-filter:blur(12px);
+padding:10px;
+display:flex;
+flex-direction:column;
+gap:8px;
+transition:.3s ease;
+z-index:20;
+}
+
+#sidebar.open{left:0;}
+
+.chatItem{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:10px;
+background:rgba(255,255,255,0.08);
+border-radius:10px;
+cursor:pointer;
+}
+
+.chatItem:hover{
+background:rgba(34,197,94,0.25);
+}
+
+.delBtn{
+background:red;
+border:none;
+color:white;
+padding:3px 7px;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* MAIN */
+#main{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+/* TOP BAR */
+.topBar{
+padding:10px;
+background:rgba(0,0,0,0.25);
+}
+
+.menuBtn{
+background:none;
+border:none;
+color:white;
+font-size:28px;
+cursor:pointer;
+}
+
+/* CHAT */
+#chat{
+flex:1;
+overflow-y:auto;
+padding:15px;
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+.msg{
+max-width:75%;
+padding:10px;
+border-radius:12px;
+}
+
+.user{align-self:flex-end;background:#22c55e;color:black;}
+.ai{align-self:flex-start;background:rgba(255,255,255,0.12);}
+
+/* INPUT */
+#inputArea{
+display:flex;
+padding:10px;
+gap:10px;
+background:rgba(0,0,0,0.4);
+}
+
+#input{
+flex:1;
 padding:12px;
-margin:6px 0;
 border:none;
 border-radius:10px;
 outline:none;
 }
 
-button{
-width:100%;
-padding:12px;
-margin-top:8px;
-border:none;
-border-radius:10px;
+.send{
 background:#22c55e;
-font-weight:bold;
+border:none;
+padding:12px 16px;
+font-weight:700;
+border-radius:10px;
 cursor:pointer;
+}
+
+/* CONFIRM */
+#confirmBox{
+position:fixed;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+background:rgba(0,0,0,0.6);
+opacity:0;
+pointer-events:none;
 transition:.2s;
+z-index:9999;
 }
 
-button:hover{
-transform:scale(1.05);
-box-shadow:0 0 15px #22c55e;
+#confirmBox.show{
+opacity:1;
+pointer-events:auto;
 }
 
-#msg{
-color:white;
+.confirm{
+background:#111;
+padding:20px;
+border-radius:12px;
+width:260px;
 text-align:center;
-margin-top:10px;
-font-size:14px;
 }
 
-/* APP */
-#app{
-display:none;
-color:white;
-text-align:center;
+.btns{
+display:flex;
+gap:10px;
+margin-top:15px;
+}
+
+.btns button{
+flex:1;
+padding:10px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:700;
+}
+
+.yes{background:#22c55e;color:black;}
+.no{background:#444;color:white;}
+
+/* TYPING */
+.typing{
+align-self:flex-start;
+background:rgba(255,255,255,0.10);
+padding:10px 14px;
+border-radius:12px;
+display:flex;
+align-items:center;
+gap:10px;
+font-style:italic;
+}
+
+.dots{
+display:flex;
+gap:4px;
+}
+
+.dot{
+width:8px;
+height:8px;
+border-radius:50%;
+background:#22c55e;
+animation:bounce 1s infinite ease-in-out;
+}
+
+.dot:nth-child(2){animation-delay:.2s;}
+.dot:nth-child(3){animation-delay:.4s;}
+
+@keyframes bounce{
+0%,100%{transform:translateY(0);opacity:.4;}
+50%{transform:translateY(-6px);opacity:1;}
 }
 
 </style>
@@ -82,115 +252,206 @@ text-align:center;
 
 <body>
 
-<!-- LOGIN -->
-<div class="card" id="authBox">
-  <h2>VladGPT</h2>
-
-  <input id="username" placeholder="Username">
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-
-  <button onclick="signup()">Create account</button>
-  <button onclick="login()">Login</button>
-
-  <div id="msg"></div>
+<!-- LOADING -->
+<div id="loadingScreen">
+  <div class="loadingText">VladGPT</div>
 </div>
 
-<!-- APP -->
-<div id="app">
-  <h2>Welcome to VladGPT</h2>
-  <p id="userInfo"></p>
+<!-- OVERLAY -->
+<div id="overlay" onclick="closeSidebar()"></div>
 
-  <button onclick="logout()">Logout</button>
+<!-- SIDEBAR -->
+<div id="sidebar"></div>
 
-  <hr>
-
-  <p>Chat system goes here...</p>
+<!-- CONFIRM -->
+<div id="confirmBox">
+  <div class="confirm">
+    <p>Are you sure you want to delete?</p>
+    <div class="btns">
+      <button class="no" onclick="closeConfirm()">No</button>
+      <button class="yes" id="yesBtn">Yes</button>
+    </div>
+  </div>
 </div>
 
-<script type="module">
+<!-- MAIN -->
+<div id="main">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-getAuth,
-createUserWithEmailAndPassword,
-signInWithEmailAndPassword,
-updateProfile,
-onAuthStateChanged,
-signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+<div class="topBar">
+<button class="menuBtn" onclick="openSidebar()">•••</button>
+</div>
 
-/* 🔥 FIREBASE CONFIG (REPLACE WITH YOURS) */
-const firebaseConfig = {
-apiKey: "YOUR_API_KEY",
-authDomain: "YOUR_AUTH_DOMAIN",
-projectId: "YOUR_PROJECT_ID",
-appId: "YOUR_APP_ID"
+<div id="chat"></div>
+
+<div id="inputArea">
+<input id="input" placeholder="Ask..." />
+<button class="send" onclick="sendMessage()">Send</button>
+</div>
+
+</div>
+
+<script>
+
+let conversations = JSON.parse(localStorage.getItem('vlad')||'[]');
+let active=null;
+
+/* SAVE */
+function save(){
+localStorage.setItem('vlad',JSON.stringify(conversations));
+}
+
+/* INIT → ALWAYS NEW CHAT ON REFRESH */
+function init(){
+const c={id:Date.now(),messages:[]};
+conversations.push(c);
+active=c.id;
+save();
+render();
+}
+
+/* SIDEBAR */
+function openSidebar(){
+document.getElementById('sidebar').classList.add('open');
+document.getElementById('overlay').classList.add('show');
+}
+
+function closeSidebar(){
+document.getElementById('sidebar').classList.remove('open');
+document.getElementById('overlay').classList.remove('show');
+}
+
+/* NEW CHAT */
+function newChat(){
+const c={id:Date.now(),messages:[]};
+conversations.unshift(c);
+active=c.id;
+save();
+render();
+closeSidebar();
+}
+
+/* TITLE */
+function title(c){
+return c.messages.length?c.messages[0].text.slice(0,25):"New Chat";
+}
+
+/* DELETE */
+let deleteTarget=null;
+
+function askDelete(id){
+deleteTarget=id;
+document.getElementById('confirmBox').classList.add('show');
+
+document.getElementById('yesBtn').onclick=()=>{
+conversations=conversations.filter(c=>c.id!==id);
+if(active===id) active=conversations[0]?.id||null;
+save();
+render();
+closeConfirm();
 };
+}
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+function closeConfirm(){
+document.getElementById('confirmBox').classList.remove('show');
+}
 
-/* ================= SIGNUP ================= */
+/* TYPING */
+function showTyping(){
+const box=document.getElementById('chat');
 
-window.signup = async function () {
-const email = document.getElementById("email").value;
-const pass = document.getElementById("password").value;
-const username = document.getElementById("username").value;
+const d=document.createElement('div');
+d.className='typing';
+d.id='typing';
 
-try {
-const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+d.innerHTML=`
+<span>VladGPT is typing</span>
+<div class="dots">
+<div class="dot"></div>
+<div class="dot"></div>
+<div class="dot"></div>
+</div>
+`;
 
-await updateProfile(userCred.user, {
-displayName: username
+box.appendChild(d);
+box.scrollTop=box.scrollHeight;
+}
+
+function hideTyping(){
+const t=document.getElementById('typing');
+if(t) t.remove();
+}
+
+/* RENDER */
+function render(){
+const side=document.getElementById('sidebar');
+side.innerHTML='';
+
+conversations.forEach(c=>{
+const div=document.createElement('div');
+div.className='chatItem';
+
+div.innerHTML=`
+<span>${title(c)}</span>
+<button class="delBtn" onclick="event.stopPropagation();askDelete(${c.id})">x</button>
+`;
+
+div.onclick=()=>{active=c.id;render();closeSidebar();};
+
+side.appendChild(div);
 });
 
-msg("Account created!");
-} catch (e) {
-msg(e.message);
+const chat=conversations.find(c=>c.id===active);
+const box=document.getElementById('chat');
+box.innerHTML='';
+
+if(!chat) return;
+
+chat.messages.forEach(m=>{
+const d=document.createElement('div');
+d.className='msg '+m.role;
+d.innerText=m.text;
+box.appendChild(d);
+});
 }
-};
 
-/* ================= LOGIN ================= */
+/* SEND */
+async function sendMessage(){
+const text=input.value.trim();
+if(!text||!active) return;
 
-window.login = async function () {
-const email = document.getElementById("email").value;
-const pass = document.getElementById("password").value;
+const chat=conversations.find(c=>c.id===active);
 
-try {
-await signInWithEmailAndPassword(auth, email, pass);
-} catch (e) {
-msg(e.message);
-}
-};
+chat.messages.push({role:'user',text});
+input.value='';
+render();
 
-/* ================= LOGOUT ================= */
+showTyping();
 
-window.logout = async function () {
-await signOut(auth);
-};
-
-/* ================= STATE ================= */
-
-onAuthStateChanged(auth, (user) => {
-if (user) {
-document.getElementById("authBox").style.display = "none";
-document.getElementById("app").style.display = "block";
-
-document.getElementById("userInfo").innerText =
-"Logged in as: " + (user.displayName || user.email);
-
-} else {
-document.getElementById("authBox").style.display = "block";
-document.getElementById("app").style.display = "none";
-}
+const res=await fetch('/api/chat',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({message:text})
 });
 
-/* ================= MSG ================= */
+const data=await res.json();
 
-function msg(t){
-document.getElementById("msg").innerText = t;
+hideTyping();
+
+chat.messages.push({role:'ai',text:data.reply});
+
+save();
+render();
 }
+
+input.addEventListener('keydown',e=>{
+if(e.key==='Enter') sendMessage();
+});
+
+setTimeout(()=>{
+document.getElementById('loadingScreen').remove();
+},4500);
+
+init();
 
 </script>
 
