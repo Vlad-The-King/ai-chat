@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     const { message } = req.body;
     const msg = message.toLowerCase();
 
-    // 👉 doar override pentru nume
+    // 👉 detectare întrebare despre nume
     const isNameQuestion =
       msg.includes("cum te numesti") ||
       msg.includes("ce nume ai") ||
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 👉 GROQ NORMAL (pentru TOT RESTUL)
+    // 👉 GROQ REQUEST (MODEL ACTUAL)
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -25,11 +25,14 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "llama-3.1-70b-versatile",
+        model: "llama-3.3-70b-versatile",
         messages: [
           {
             role: "system",
-            content: "You are VladGPT Pro, a helpful AI assistant."
+            content: `
+You are VladGPT Pro, a smart and helpful AI assistant.
+Answer clearly, correctly and naturally.
+`
           },
           {
             role: "user",
@@ -43,17 +46,18 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    console.log("GROQ:", data);
+    console.log("GROQ RESPONSE:", data);
 
+    // 👉 SAFE RESPONSE HANDLING
     const reply =
       data?.choices?.[0]?.message?.content ||
       data?.error?.message ||
-      "No response";
+      "AI error";
 
     return res.status(200).json({ reply });
 
   } catch (err) {
-    console.log(err);
+    console.log("SERVER ERROR:", err);
     return res.status(500).json({
       reply: "Server error"
     });
